@@ -85,6 +85,7 @@ bool_t global_doPrint = TRUE;
 char* global_inputFile = NULL;
 long global_params[256]; /* 256 = ascii limit */
 pthread_t *thread_vector;
+pthread_mutex_t* pointLockPtr; /* contains the lock for each point in the grid */
 
 
 /* =============================================================================
@@ -122,14 +123,44 @@ static void setDefaultParams (){
   */
 void createThreads(void* routerArg){
     for (int i = 0; i < global_params[PARAM_THREADS] ; i++){
-        if (pthread_create(&thread_vector[i], NULL, router_solve, routerArg)==0){
-            printf("Thread created.\n");
-        } 
-        else{
-            printf("Couldn't create thread.");
+        if (!pthread_create(&thread_vector[i], NULL, router_solve, routerArg)==0){
+            perror("Couldn't create thread");
             exit(1);
         }
     }
+}
+
+/* =============================================================================
+ * joinThreads
+ * =============================================================================
+  */
+void joinThreads(){
+    for(int i=0; i<global_params[PARAM_THREADS]; i++){  
+        if (pthread_join(thread_vector[i],NULL) !=0){
+            fprintf(stderr, "Couldn't join thread");
+            exit(1);
+        }
+    }
+}
+
+/* =============================================================================
+ * lock_alloc
+ * =============================================================================
+ */
+pthread_mutex_t* lock_alloc(long width, long height, long depth){
+    pthread_mutex_t* pointLockPtr;
+
+    long n = width * height * depth;
+    pointLockPtr = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t)* n);
+
+    for(int i=0; i<n ; i++){
+        if (pthread_mutex_init(&pointLockPtr[i], NULL) != 0){
+            perror("Failed to initialize mutex");
+            exit(1);
+        }
+    }
+
+    return pointLockPtr;   
 }
 
 /* =============================================================================
@@ -209,6 +240,7 @@ int main(int argc, char** argv){
     maze_t* mazePtr = maze_alloc();
     assert(mazePtr);
     long numPathToRoute = maze_read(mazePtr, global_inputFile, resultFp);
+    pointLockPtr = lock_alloc(mazePtr->gridPtr->width, mazePtr->gridPtr->height, mazePtr->gridPtr->depth);
     router_t* routerPtr = router_alloc(global_params[PARAM_XCOST],
                                        global_params[PARAM_YCOST],
                                        global_params[PARAM_ZCOST],
@@ -217,18 +249,12 @@ int main(int argc, char** argv){
     list_t* pathVectorListPtr = list_alloc(NULL);
     assert(pathVectorListPtr);
 
-    router_solve_arg_t routerArg = {routerPtr, mazePtr, pathVectorListPtr};
+    router_solve_arg_t routerArg = {routerPtr, mazePtr, pathVectorListPtr, pointLockPtr};
     TIMER_T startTime;
     TIMER_READ(startTime);
     
     createThreads((void *)&routerArg);
-    for(int i=0; i<global_params[PARAM_THREADS]; i++){
-        if (pthread_join(thread_vector[i],NULL) !=0){
-            fprintf(stderr, "Couldn't join thread");
-            exit(1);
-        }
-
-    }
+    joinThreads();
 
     TIMER_T stopTime;
     TIMER_READ(stopTime);

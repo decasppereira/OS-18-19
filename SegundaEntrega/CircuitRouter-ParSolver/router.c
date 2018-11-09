@@ -303,6 +303,7 @@ void * router_solve (void* argPtr){
     router_t* routerPtr = routerArgPtr->routerPtr;
     maze_t* mazePtr = routerArgPtr->mazePtr;
     vector_t* myPathVectorPtr = vector_alloc(1);
+    pthread_mutex_t* pointLockPtr = routerArgPtr->pointLockPtr;
     assert(myPathVectorPtr);
 
     
@@ -336,8 +337,6 @@ void * router_solve (void* argPtr){
         coordinate_t* srcPtr = coordinatePairPtr->firstPtr;
         coordinate_t* dstPtr = coordinatePairPtr->secondPtr;
 
-        pair_free(coordinatePairPtr);
-
         bool_t success = FALSE;
         vector_t* pointVectorPtr = NULL;
 
@@ -351,8 +350,20 @@ void * router_solve (void* argPtr){
 
             if (pointVectorPtr) {
                 pthread_mutex_lock(&grid_lock);
-                if(grid_addPath_Ptr(gridPtr, pointVectorPtr))
+
+                if(grid_addPath_Ptr(gridPtr, pointVectorPtr, pointLockPtr)){
                     success = TRUE;
+                    pair_free(coordinatePairPtr);
+                }
+               else{
+                    pthread_mutex_lock(&queue_lock);
+                    if (queue_push(workQueuePtr, (void*)coordinatePairPtr)==FALSE){
+                        perror("Couldn't push to WorkQueue");
+                        pair_free(coordinatePairPtr);
+                        exit(1);
+                    }
+                    pthread_mutex_unlock(&queue_lock);
+                }
                 pthread_mutex_unlock(&grid_lock);
             }
         }

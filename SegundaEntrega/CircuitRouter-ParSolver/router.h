@@ -57,6 +57,7 @@
 
 #include "grid.h"
 #include "maze.h"
+#include <pthread.h>
 #include "lib/vector.h"
 
 typedef struct router {
@@ -70,6 +71,7 @@ typedef struct router_solve_arg {
     router_t* routerPtr;
     maze_t* mazePtr;
     list_t* pathVectorListPtr;
+    pthread_mutex_t* pointLockPtr;
 } router_solve_arg_t;
 
 
