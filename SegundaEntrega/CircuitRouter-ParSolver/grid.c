@@ -57,6 +57,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include "coordinate.h"
 #include "grid.h"
 #include "lib/types.h"
@@ -90,6 +91,8 @@ grid_t* grid_alloc (long width, long height, long depth){
 
     return gridPtr;
 }
+
+
 
 /* =============================================================================
  * grid_free
@@ -216,13 +219,19 @@ void grid_addPath (grid_t* gridPtr, vector_t* pointVectorPtr){
  * grid_addPath_Ptr
  * =============================================================================
  */
-int grid_addPath_Ptr (grid_t* gridPtr, vector_t* pointVectorPtr){ 
+int grid_addPath_Ptr (grid_t* gridPtr, vector_t* pointVectorPtr, pthread_mutex_t* pointLockPtr){ 
     long i;
     long n = vector_getSize(pointVectorPtr);
+    long x, y, z, lock_pos;
+    //long try_counter = 1;
 
 
     for (i = 1; i < (n-1); i++) {
         long* gridPointPtr = (long*)vector_at(pointVectorPtr, i);
+        grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
+        lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
+
+        //pthread_mutex_lock(&pointLockPtr[lock_pos]);
         if (*gridPointPtr == GRID_POINT_FULL)
             return 0;
     }
