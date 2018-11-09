@@ -142,6 +142,11 @@ bool_t grid_isPointFull (grid_t* gridPtr, long x, long y, long z);
  */
 void grid_setPoint (grid_t* gridPtr, long x, long y, long z, long value);
 
+/* =============================================================================
+ * grid_getPosition
+ * =============================================================================
+ */
+long grid_getPosition(grid_t* gridPtr, vector_t* pointVectorPtr, long i);
 
 /* =============================================================================
  * grid_addPath

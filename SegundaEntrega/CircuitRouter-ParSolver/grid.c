@@ -58,6 +58,7 @@
 #include <getopt.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <time.h>
 #include "coordinate.h"
 #include "grid.h"
 #include "lib/types.h"
@@ -214,6 +215,20 @@ void grid_addPath (grid_t* gridPtr, vector_t* pointVectorPtr){
     }
 }
 
+/* =============================================================================
+ * grid_getPosition
+ * =============================================================================
+ */
+long grid_getPosition(grid_t* gridPtr, vector_t* pointVectorPtr, long i){
+    long x, y, z, lock_pos;
+    long* gridPointPtr = (long*)vector_at(pointVectorPtr, i);
+
+    grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
+    lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
+
+    return lock_pos;
+}
+
 
 /* =============================================================================
  * grid_addPath_Ptr
@@ -223,22 +238,55 @@ int grid_addPath_Ptr (grid_t* gridPtr, vector_t* pointVectorPtr, pthread_mutex_t
     long i;
     long n = vector_getSize(pointVectorPtr);
     long x, y, z, lock_pos;
-    //long try_counter = 1;
-
+    struct timespec sleep_time = {0 , (time_t) ((100 + random()%900))};
 
     for (i = 1; i < (n-1); i++) {
         long* gridPointPtr = (long*)vector_at(pointVectorPtr, i);
         grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
         lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
 
-        //pthread_mutex_lock(&pointLockPtr[lock_pos]);
-        if (*gridPointPtr == GRID_POINT_FULL)
-            return 0;
+        if(pthread_mutex_trylock(&pointLockPtr[lock_pos]) == 0){
+            if (*gridPointPtr == GRID_POINT_FULL){
+                for(int l=1; l <= i; l++){
+
+                    long* gridPointPtr = (long*)vector_at(pointVectorPtr, l);
+                    grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
+                    lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
+
+                    if(pthread_mutex_unlock(&pointLockPtr[lock_pos]) != 0){
+                        perror("Couldn't unlock mutex.");
+                        exit(1); 
+                    }
+                }
+                return 0;
+            }
+        }
+        else{  
+            for(int j=1; j<i; j++){
+                long* gridPointPtr = (long*)vector_at(pointVectorPtr, j);
+                grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
+                lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
+
+                if(pthread_mutex_unlock(&pointLockPtr[lock_pos]) != 0){
+                    perror("Couldn't unlock mutex.");
+                    exit(1); 
+                }
+            }
+            nanosleep(&sleep_time,NULL);
+            i=0;
+        }
     }
 
     for (i = 1; i < (n-1); i++) {
         long* gridPointPtr = (long*)vector_at(pointVectorPtr, i);
+        grid_getPointIndices(gridPtr, gridPointPtr, &x, &y, &z);
+        lock_pos = (z * gridPtr->height + y) * gridPtr->width + x;
+
         *gridPointPtr = GRID_POINT_FULL; 
+        if(pthread_mutex_unlock(&pointLockPtr[lock_pos]) != 0){
+            perror("Couldn't unlock mutex.");
+            exit(1); 
+        }
     }
     return 1;
 }

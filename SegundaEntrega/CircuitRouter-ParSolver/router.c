@@ -349,8 +349,6 @@ void * router_solve (void* argPtr){
             pointVectorPtr = doTraceback(gridPtr, myGridPtr, dstPtr, bendCost);
 
             if (pointVectorPtr) {
-                pthread_mutex_lock(&grid_lock);
-
                 if(grid_addPath_Ptr(gridPtr, pointVectorPtr, pointLockPtr)){
                     success = TRUE;
                     pair_free(coordinatePairPtr);
@@ -364,7 +362,6 @@ void * router_solve (void* argPtr){
                     }
                     pthread_mutex_unlock(&queue_lock);
                 }
-                pthread_mutex_unlock(&grid_lock);
             }
         }
 
