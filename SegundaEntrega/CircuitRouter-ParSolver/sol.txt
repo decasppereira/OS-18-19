@@ -1,0 +1,2 @@
+falta o caso do par nao passar no do expand
+Ou seja, temos de dar free dos que sao impossiveis

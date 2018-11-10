@@ -361,9 +361,12 @@ void * router_solve (void* argPtr){
                 }
             }
         }
-        if (success) {
+        else {
             pair_free(coordinatePairPtr);
+        }
+        if (success) {
             bool_t status = vector_pushBack(myPathVectorPtr,(void*)pointVectorPtr);
+            pair_free(coordinatePairPtr);
             assert(status);
         }
         
