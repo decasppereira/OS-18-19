@@ -350,19 +350,19 @@ void * router_solve (void* argPtr){
             if (pointVectorPtr) {
                 if(grid_addPath_Ptr(gridPtr, pointVectorPtr, pointLockPtr)){
                     success = TRUE;
-                    pair_free(coordinatePairPtr);
                 }
                else{
                     assert(!pthread_mutex_lock(&queue_lock));
                     if (queue_push(workQueuePtr, (void*)coordinatePairPtr)==FALSE){
                         perror("Couldn't push to WorkQueue");
-                        pair_free(coordinatePairPtr);
                         exit(1);
                     }
                     assert(!pthread_mutex_unlock(&queue_lock));
                 }
             }
         }
+        
+        pair_free(coordinatePairPtr);
 
         if (success) {
             bool_t status = vector_pushBack(myPathVectorPtr,(void*)pointVectorPtr);
