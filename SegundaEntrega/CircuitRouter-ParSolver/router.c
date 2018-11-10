@@ -87,7 +87,6 @@ point_t MOVE_NEGY = { 0, -1,  0,  0, MOMENTUM_NEGY};
 point_t MOVE_NEGZ = { 0,  0, -1,  0, MOMENTUM_NEGZ};
 
 pthread_mutex_t queue_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t grid_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pathVectorList_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -321,14 +320,14 @@ void * router_solve (void* argPtr){
 
         pair_t* coordinatePairPtr;
 
-        pthread_mutex_lock(&queue_lock);
+        assert(!pthread_mutex_lock(&queue_lock));
         if (queue_isEmpty(workQueuePtr)) {
             coordinatePairPtr = NULL;
         }
         else {
             coordinatePairPtr = (pair_t*)queue_pop(workQueuePtr);  
         }
-        pthread_mutex_unlock(&queue_lock);
+        assert(!pthread_mutex_unlock(&queue_lock));
         
         if (coordinatePairPtr == NULL) {
             break;
@@ -349,24 +348,21 @@ void * router_solve (void* argPtr){
             pointVectorPtr = doTraceback(gridPtr, myGridPtr, dstPtr, bendCost);
 
             if (pointVectorPtr) {
-                pthread_mutex_lock(&grid_lock);
-
                 if(grid_addPath_Ptr(gridPtr, pointVectorPtr, pointLockPtr)){
                     success = TRUE;
-                    pair_free(coordinatePairPtr);
                 }
                else{
-                    pthread_mutex_lock(&queue_lock);
+                    assert(!pthread_mutex_lock(&queue_lock));
                     if (queue_push(workQueuePtr, (void*)coordinatePairPtr)==FALSE){
                         perror("Couldn't push to WorkQueue");
-                        pair_free(coordinatePairPtr);
                         exit(1);
                     }
-                    pthread_mutex_unlock(&queue_lock);
+                    assert(!pthread_mutex_unlock(&queue_lock));
                 }
-                pthread_mutex_unlock(&grid_lock);
             }
         }
+        
+        pair_free(coordinatePairPtr);
 
         if (success) {
             bool_t status = vector_pushBack(myPathVectorPtr,(void*)pointVectorPtr);
@@ -379,10 +375,10 @@ void * router_solve (void* argPtr){
      * Add my paths to global list
      */
 
-    pthread_mutex_lock(&pathVectorList_lock);
+    assert(!pthread_mutex_lock(&pathVectorList_lock));
     list_t* pathVectorListPtr = routerArgPtr->pathVectorListPtr;
     list_insert(pathVectorListPtr, (void*)myPathVectorPtr);
-    pthread_mutex_unlock(&pathVectorList_lock);
+    assert(!pthread_mutex_unlock(&pathVectorList_lock));
     
     grid_free(myGridPtr);
     queue_free(myExpansionQueuePtr);
