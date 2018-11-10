@@ -99,6 +99,7 @@ static void displayUsage (const char* appName){
     printf("    x <UINT>   [x] movement cost    (%i)\n", PARAM_DEFAULT_XCOST);
     printf("    y <UINT>   [y] movement cost    (%i)\n", PARAM_DEFAULT_YCOST);
     printf("    z <UINT>   [z] movement cost    (%i)\n", PARAM_DEFAULT_ZCOST);
+    printf("    t <UINT>   [t] number of working threads.\n");
     printf("    h          [h]elp message       (false)\n");
     exit(1);
 }
@@ -204,6 +205,11 @@ static void parseArgs (long argc, char* const argv[]){
     if (optind >= argc) {
         fprintf(stderr, "Missing input file\n");
         displayUsage(argv[0]);
+    }
+
+    if(global_params[PARAM_THREADS] <= 0){
+        perror("Invalid number of threads.\n");
+        exit(1);
     }
 
     global_inputFile = argv[optind];

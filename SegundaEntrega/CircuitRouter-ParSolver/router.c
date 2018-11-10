@@ -378,7 +378,7 @@ void * router_solve (void* argPtr){
 
     assert(!pthread_mutex_lock(&pathVectorList_lock));
     list_t* pathVectorListPtr = routerArgPtr->pathVectorListPtr;
-    list_insert(pathVectorListPtr, (void*)myPathVectorPtr);
+    assert(list_insert(pathVectorListPtr, (void*)myPathVectorPtr));
     assert(!pthread_mutex_unlock(&pathVectorList_lock));
     
     grid_free(myGridPtr);

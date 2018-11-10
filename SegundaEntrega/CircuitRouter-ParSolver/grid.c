@@ -259,7 +259,7 @@ int grid_addPath_Ptr (grid_t* gridPtr, vector_t* pointVectorPtr, pthread_mutex_t
                 lock_pos = grid_getPosition(gridPtr, j, gridPointPtr);
                 assert(!pthread_mutex_unlock(&pointLockPtr[lock_pos]));
             }
-            nanosleep(&sleep_time,NULL);
+            assert(!nanosleep(&sleep_time,NULL));
             i=0;
         }
     }
