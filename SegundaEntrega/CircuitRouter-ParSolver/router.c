@@ -361,16 +361,14 @@ void * router_solve (void* argPtr){
                 }
             }
         }
-        
-        pair_free(coordinatePairPtr);
-
         if (success) {
+            pair_free(coordinatePairPtr);
             bool_t status = vector_pushBack(myPathVectorPtr,(void*)pointVectorPtr);
             assert(status);
         }
-    
+        
     }
-
+    
     /*
      * Add my paths to global list
      */

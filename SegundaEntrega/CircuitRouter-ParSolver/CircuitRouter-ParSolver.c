@@ -164,12 +164,12 @@ pthread_mutex_t* lock_alloc(long width, long height, long depth){
 }
 
 /* =============================================================================
- * lock_destroy
+ * lock_alloc
  * =============================================================================
  */
 void lock_destroy(long width, long height, long depth) {
     long n = width * height * depth;
-    for(long i=0; i<n; i++) {
+    for(int i=0; i<n; i++) {
         assert(!pthread_mutex_destroy(&pointLockPtr[i]));
     }
 }
