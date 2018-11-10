@@ -1,0 +1,41 @@
+core id		: 0
+cpu cores	: 4
+core id		: 1
+cpu cores	: 4
+core id		: 2
+cpu cores	: 4
+core id		: 3
+cpu cores	: 4
+core id		: 0
+cpu cores	: 4
+core id		: 1
+cpu cores	: 4
+core id		: 2
+cpu cores	: 4
+core id		: 3
+cpu cores	: 4
+cpu MHz		: 864.983
+cpu MHz		: 1537.307
+cpu MHz		: 1080.777
+cpu MHz		: 1120.511
+cpu MHz		: 808.008
+cpu MHz		: 849.238
+cpu MHz		: 1677.195
+cpu MHz		: 824.710
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+model		: 142
+model name	: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+Linux andreia-Lenovo-ideapad-720S-14IKB 4.15.0-36-generic #39-Ubuntu SMP Mon Sep 24 16:19:09 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
