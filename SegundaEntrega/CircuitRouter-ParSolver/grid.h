@@ -146,7 +146,7 @@ void grid_setPoint (grid_t* gridPtr, long x, long y, long z, long value);
  * grid_getPosition
  * =============================================================================
  */
-long grid_getPosition(grid_t* gridPtr, vector_t* pointVectorPtr, long i);
+long grid_getPosition(grid_t* gridPtr, long i, long* gridPointPtr);
 
 /* =============================================================================
  * grid_addPath

@@ -164,6 +164,17 @@ pthread_mutex_t* lock_alloc(long width, long height, long depth){
 }
 
 /* =============================================================================
+ * lock_alloc
+ * =============================================================================
+ */
+void lock_destroy(long width, long height, long depth) {
+    long n = width * height * depth;
+    for(int i=0; i<n; i++) {
+        assert(!pthread_mutex_destroy(&pointLockPtr[i]));
+    }
+}
+
+/* =============================================================================
  * parseArgs
  * =============================================================================
  */
@@ -280,6 +291,7 @@ int main(int argc, char** argv){
 
     maze_free(mazePtr);
     router_free(routerPtr);
+    //lock_destroy(mazePtr->gridPtr->width, mazePtr->gridPtr->height, mazePtr->gridPtr->depth);
 
     list_iter_reset(&it, pathVectorListPtr);
     while (list_iter_hasNext(&it, pathVectorListPtr)) {
