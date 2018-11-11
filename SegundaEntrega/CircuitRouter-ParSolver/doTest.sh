@@ -5,7 +5,7 @@ numThreads=$1
 # Filenames
 filename=$(basename $2)
 input="../"$2
-output="../results/"$filename".speedups.csv"
+output=$input".speedups.csv"
 touch $output       # creates the output file
 execTime=$input".res"
 
