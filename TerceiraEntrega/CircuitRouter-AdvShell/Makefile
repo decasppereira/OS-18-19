@@ -1,11 +1,11 @@
 # Makefile, versao 1
-# Sistemas Operativos, DEI/IST/ULisboa 2018-19
+# Sistemas Operativos
 
 SOURCES = CircuitRouter-AdvShell.c 
 SOURCES+= ../lib/commandlinereader.c ../lib/vector.c
 OBJS = $(SOURCES:%.c=%.o)
 CC   = gcc
-CFLAGS =-Wall -std=gnu99 -I../
+CFLAGS =-Wall -std=gnu99 -I../ -g
 LDFLAGS=-lm
 TARGET = CircuitRouter-AdvShell
 
@@ -33,4 +33,6 @@ clean:
 	rm -f $(OBJS) $(TARGET)
 	rm -f $(OBJS) CircuitRouter-Client
 	rm -f $(OBJS) CircuitRouter-Client.o
+	rm -f client*
+	rm -f *.pipe
 	(cd ../CircuitRouter-SeqSolver/ && make clean) 

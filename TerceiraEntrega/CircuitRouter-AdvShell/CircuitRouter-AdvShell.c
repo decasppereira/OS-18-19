@@ -16,6 +16,11 @@
 #include <limits.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#include <sys/select.h>
+
 
 #define COMMAND_EXIT "exit"
 #define COMMAND_RUN "run"
@@ -71,23 +76,61 @@ int main (int argc, char** argv) {
     vector_t *children;
     int runningChildren = 0;
 
+    bool_t from_pipe = FALSE;
+    char *unknown_message = "Unknown command. Try again.";
+    char *invalid_message = "Invalid syntax. Try again.";
+
+
+    char *adv_pipe_name = (char*)malloc(strlen(argv[0]) + strlen(".pipe") + 1);
+    int adv_pipe;
+
+    char client_name[BUFFER_SIZE];
+    int client_pipe;
+
+
+    fd_set readfds;
+
+    printf("Welcome to CircuitRouter-AdvancedShell\n\n");
+
+    sprintf(adv_pipe_name, "%s.pipe", argv[0]);
+    unlink(adv_pipe_name);
+
+    adv_pipe = mkfifo(adv_pipe_name, 0666);
+    if(adv_pipe < 0) {
+        perror("Error creating named pipe.\n");
+        exit(-1);
+    }
+
+
     if(argv[1] != NULL){
         MAXCHILDREN = atoi(argv[1]);
     }
 
     children = vector_alloc(MAXCHILDREN);
 
-
-    printf("Welcome to CircuitRouter-SimpleShell\n\n");
-
     while (1) {
         int numArgs;
+        if ((adv_pipe = open(adv_pipe_name, O_RDONLY|O_NONBLOCK)) < 0) exit (-1);
+        from_pipe = FALSE;
 
-        numArgs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
+        FD_ZERO(&readfds);
+        FD_SET(0, &readfds);
+        FD_SET(adv_pipe, &readfds);
 
+        select(adv_pipe+1, &readfds, 0, 0, 0);
+
+        if(FD_ISSET(0, &readfds)){
+            numArgs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
+        }
+        
+        if(FD_ISSET(adv_pipe, &readfds)){
+            numArgs = readPipeArguments(args, MAXARGS+1, buffer, BUFFER_SIZE, adv_pipe, client_name);
+            from_pipe = TRUE;
+        }
+            
         /* EOF (end of file) do stdin ou comando "sair" */
-        if (numArgs < 0 || (numArgs > 0 && (strcmp(args[0], COMMAND_EXIT) == 0))) {
-            printf("CircuitRouter-SimpleShell will exit.\n--\n");
+        if (numArgs < 0 || (numArgs > 0 && (strcmp(args[0], COMMAND_EXIT) == 0) && (!from_pipe))) {
+            printf("CircuitRouter-AdvancedShell will exit.\n--\n");
 
             /* Espera pela terminacao de cada filho */
             while (runningChildren > 0) {
@@ -96,14 +139,20 @@ int main (int argc, char** argv) {
             }
 
             printChildren(children);
-            printf("--\nCircuitRouter-SimpleShell ended.\n");
+            printf("--\nCircuitRouter-AdvancedShell ended.\n");
             break;
         }
 
         else if (numArgs > 0 && strcmp(args[0], COMMAND_RUN) == 0){
             int pid;
             if (numArgs < 2) {
-                printf("%s: invalid syntax. Try again.\n", COMMAND_RUN);
+                if (from_pipe) {
+                    if ((client_pipe = open(client_name, O_WRONLY)) < 0) exit (-1);
+                    write(client_pipe, invalid_message, strlen(invalid_message));
+                    close(client_pipe);
+                }
+                else
+                    printf("%s: invalid syntax. Try again.\n", COMMAND_RUN);
                 continue;
             }
             if (MAXCHILDREN != -1 && runningChildren >= MAXCHILDREN) {
@@ -123,7 +172,7 @@ int main (int argc, char** argv) {
                 continue;
             } else {
                 char seqsolver[] = "../CircuitRouter-SeqSolver/CircuitRouter-SeqSolver";
-                char *newArgs[3] = {seqsolver, args[1], NULL};
+                char *newArgs[4] = {seqsolver, args[1], client_name, NULL};
 
                 execv(seqsolver, newArgs);
                 perror("Error while executing child process"); // Nao deveria chegar aqui
@@ -135,9 +184,17 @@ int main (int argc, char** argv) {
             /* Nenhum argumento; ignora e volta a pedir */
             continue;
         }
-        else
-            printf("Unknown command. Try again.\n");
-
+        else {
+            if (from_pipe) {
+                if ((client_pipe = open(client_name, O_WRONLY)) < 0) exit (-1);
+                write(client_pipe, unknown_message, strlen(unknown_message));
+                close(client_pipe);
+            }
+            else 
+                printf("%s", unknown_message);
+        }
+        close(adv_pipe);
+    
     }
 
     for (int i = 0; i < vector_getSize(children); i++) {

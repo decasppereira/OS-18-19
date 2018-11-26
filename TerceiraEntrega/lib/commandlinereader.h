@@ -3,6 +3,7 @@
 // Sistemas Operativos, DEI/IST/ULisboa 2018-19
 */
 
+
 #ifndef COMMANDLINEREADER_H
 #define COMMANDLINEREADER_H
 
@@ -25,5 +26,6 @@ Return value:
 */
 
 int readLineArguments(char **argVector, int vectorSize, char *buffer, int bufferSize);
+int readPipeArguments(char **argVector, int vectorSize, char *buffer, int bufferSize, int pipe_fds, char* client_pipe);
 
 #endif

@@ -5,6 +5,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
+
 
 /**
 Reads up to 'vectorSize' space-separated arguments from the standard input
@@ -57,3 +59,40 @@ int readLineArguments(char **argVector, int vectorSize, char *buffer, int buffer
   return numTokens;
 }
 
+int readPipeArguments(char **argVector, int vectorSize, char *buffer, int bufferSize, int pipe_fds, char* client_pipe)
+{
+  int numTokens = 0;
+  char *s = " \r\n\t";
+
+  int i;
+  int n=0;
+
+  char *token;
+
+  if (argVector == NULL || buffer == NULL || vectorSize <= 0 || bufferSize <= 0)
+     return 0;
+
+  if ((n=read(pipe_fds, buffer, bufferSize)) <= 0) {
+    return -1;
+  }
+  buffer[n] = '\0';
+
+  /* get the first token */
+  token = strtok(buffer, s);
+  strcpy(client_pipe, token);
+  token = strtok(NULL, s);
+
+  /* walk through other tokens */
+  while( numTokens < vectorSize-2 && token != NULL ) {
+    argVector[numTokens] = token;
+    numTokens ++;
+    token = strtok(NULL, s);
+  }
+
+
+  for (i = numTokens; i<vectorSize; i++) {
+    argVector[i] = NULL;
+  }
+
+  return numTokens ; //returns the actual commands read by the pipe (not counting the client pipe's name.)
+}
