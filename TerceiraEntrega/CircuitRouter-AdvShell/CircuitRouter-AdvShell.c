@@ -18,7 +18,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-
+#include "lib/timer.h"
 #include <sys/select.h>
 
 
@@ -77,16 +77,15 @@ int main (int argc, char** argv) {
     int runningChildren = 0;
 
     bool_t from_pipe = FALSE;
-    char *unknown_message = "Unknown command. Try again.";
+    char *unknown_message = "Command not supported.";
     char *invalid_message = "Invalid syntax. Try again.";
 
 
     char *adv_pipe_name = (char*)malloc(strlen(argv[0]) + strlen(".pipe") + 1);
     int adv_pipe;
 
-    char client_name[BUFFER_SIZE];
+    char *client_name = (char*) malloc(sizeof(char) * BUFFER_SIZE);
     int client_pipe;
-
 
     fd_set readfds;
 
@@ -121,6 +120,7 @@ int main (int argc, char** argv) {
 
         if(FD_ISSET(0, &readfds)){
             numArgs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
+            client_name = NULL;
         }
         
         if(FD_ISSET(adv_pipe, &readfds)){
@@ -139,6 +139,7 @@ int main (int argc, char** argv) {
             }
 
             printChildren(children);
+            printf("%d", numArgs);
             printf("--\nCircuitRouter-AdvancedShell ended.\n");
             break;
         }
@@ -171,9 +172,9 @@ int main (int argc, char** argv) {
                 printf("%s: background child started with PID %d.\n\n", COMMAND_RUN, pid);
                 continue;
             } else {
+                
                 char seqsolver[] = "../CircuitRouter-SeqSolver/CircuitRouter-SeqSolver";
                 char *newArgs[4] = {seqsolver, args[1], client_name, NULL};
-
                 execv(seqsolver, newArgs);
                 perror("Error while executing child process"); // Nao deveria chegar aqui
                 exit(EXIT_FAILURE);

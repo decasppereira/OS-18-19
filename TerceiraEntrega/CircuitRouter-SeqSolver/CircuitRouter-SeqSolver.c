@@ -80,6 +80,9 @@ enum param_defaults {
 
 bool_t global_doPrint = TRUE;
 char* global_inputFile = NULL;
+char* global_clientName = NULL;
+int global_clientPipe;
+char *success_message = "Circuit solved";
 long global_params[256]; /* 256 = ascii limit */
 
 
@@ -144,6 +147,14 @@ static void parseArgs (long argc, char* const argv[]){
     }
 
     global_inputFile = argv[optind];
+    global_clientName = argv[optind+1];
+    printf("argc: %ld, optind: %d\n", argc, optind);
+    /*if (global_clientName != NULL){
+        puts(global_clientName);
+    }
+    else
+        puts("NULL");
+    */
 }
 
 /* =============================================================================
@@ -221,6 +232,11 @@ int main(int argc, char** argv){
     bool_t status = maze_checkPaths(mazePtr, pathVectorListPtr, resultFp, global_doPrint);
     assert(status == TRUE);
     fputs("Verification passed.\n",resultFp);
+    if (global_clientName != NULL){
+        if ((global_clientPipe = open(global_clientName, O_WRONLY)) < 0) exit (-1);
+        write(global_clientPipe, success_message, strlen(success_message));
+        close(global_clientPipe);
+    }
 
     maze_free(mazePtr);
     router_free(routerPtr);

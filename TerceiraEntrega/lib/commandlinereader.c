@@ -72,9 +72,12 @@ int readPipeArguments(char **argVector, int vectorSize, char *buffer, int buffer
   if (argVector == NULL || buffer == NULL || vectorSize <= 0 || bufferSize <= 0)
      return 0;
 
-  if ((n=read(pipe_fds, buffer, bufferSize)) <= 0) {
+  if ((n=read(pipe_fds, buffer, bufferSize)) < 0) {
     return -1;
   }
+  if(n==0)
+    return 0;
+    
   buffer[n] = '\0';
 
   /* get the first token */
