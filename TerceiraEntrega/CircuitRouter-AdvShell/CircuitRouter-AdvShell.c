@@ -28,28 +28,37 @@
 #define MAXARGS 3
 #define BUFFER_SIZE 100
 
+vector_t *children;
+sig_atomic_t runningChildren;
+
 void waitForChild(vector_t *children) {
     while (1) {
-        child_t *child = malloc(sizeof(child_t));
-        if (child == NULL) {
-            perror("Error allocating memory");
-            exit(EXIT_FAILURE);
-        }
-        child->pid = wait(&(child->status));
+        int pid, status;
+        pid = wait(&status);
+        child_t *child = searchByPid(children, pid);
+        child->status = status;
+
         if (child->pid < 0) {
             if (errno == EINTR) {
                 /* Este codigo de erro significa que chegou signal que interrompeu a espera
                    pela terminacao de filho; logo voltamos a esperar */
-                free(child);
                 continue;
             } else {
                 perror("Unexpected error while waiting for child.");
                 exit (EXIT_FAILURE);
             }
         }
-        vector_pushBack(children, child);
         return;
     }
+}
+child_t* searchByPid(vector_t *children, int pid){
+    child_t *child;
+    for(int i = 0; i < vector_getSize(children); i++){
+        child = vector_at(children, i);
+        if (child->pid == pid)
+            return child;
+    }
+    return NULL;
 }
 
 void printChildren(vector_t *children) {
@@ -68,13 +77,33 @@ void printChildren(vector_t *children) {
     puts("END.");
 }
 
+void handler(int signal){
+    TIMER_T finalTime;
+    TIMER_READ(finalTime);
+
+    int pid, status;
+    pid= waitpid(-1, &status, WNOHANG);
+    if(pid == -1) {
+        if (errno != ECHILD) {
+            perror("Error in waitpid\n");
+            exit(-1);
+        }        
+    }
+    else if (pid > 0) {
+        child_t *child = searchByPid(children, pid);
+        printf("%d", status);
+        child->status = status;
+        child->final_time = finalTime;
+        runningChildren--;
+    }
+}
+
 int main (int argc, char** argv) {
 
     char *args[MAXARGS + 1];
     char buffer[BUFFER_SIZE];
     int MAXCHILDREN = -1;
-    vector_t *children;
-    int runningChildren = 0;
+    runningChildren = 0;
 
     bool_t from_pipe = FALSE;
     char *unknown_message = "Command not supported.";
@@ -89,11 +118,22 @@ int main (int argc, char** argv) {
 
     fd_set readfds;
 
+    /*struct sigaction signal_handle;
+    signal_handle.sa_handler = handler;
+    signal_handle.sa_flags = SA_RESTART | SA_NOCLDSTOP;
+    if (sigemptyset(&signal_handle.sa_mask) == -1) {
+        perror("Error initialzing the signal mask.");
+        exit(-1);
+    }
+    if(sigaction(SIGCHLD, &signal_handle, NULL) == -1) {
+        perror("Error in sigaction.");
+        exit(-1);
+    }*/
+
     printf("Welcome to CircuitRouter-AdvancedShell\n\n");
 
     sprintf(adv_pipe_name, "%s.pipe", argv[0]);
     unlink(adv_pipe_name);
-
     adv_pipe = mkfifo(adv_pipe_name, 0666);
     if(adv_pipe < 0) {
         perror("Error creating named pipe.\n");
@@ -120,7 +160,6 @@ int main (int argc, char** argv) {
 
         if(FD_ISSET(0, &readfds)){
             numArgs = readLineArguments(args, MAXARGS+1, buffer, BUFFER_SIZE);
-            client_name = NULL;
         }
         
         if(FD_ISSET(adv_pipe, &readfds)){
@@ -134,12 +173,11 @@ int main (int argc, char** argv) {
 
             /* Espera pela terminacao de cada filho */
             while (runningChildren > 0) {
-                waitForChild(children);
-                runningChildren --;
+                waitForChild(children); //#############################################################################################
+                runningChildren --;     //#############################################################################################
             }
 
             printChildren(children);
-            printf("%d", numArgs);
             printf("--\nCircuitRouter-AdvancedShell ended.\n");
             break;
         }
@@ -156,10 +194,13 @@ int main (int argc, char** argv) {
                     printf("%s: invalid syntax. Try again.\n", COMMAND_RUN);
                 continue;
             }
-            if (MAXCHILDREN != -1 && runningChildren >= MAXCHILDREN) {
-                waitForChild(children);
-                runningChildren--;
+            while (MAXCHILDREN != -1 && runningChildren >= MAXCHILDREN) {
+                waitForChild(children); //#############################################################################################
+                runningChildren--;      //#############################################################################################
             }
+            
+            TIMER_T startTime;
+            TIMER_READ(startTime);
 
             pid = fork();
             if (pid < 0) {
@@ -170,11 +211,21 @@ int main (int argc, char** argv) {
             if (pid > 0) {
                 runningChildren++;
                 printf("%s: background child started with PID %d.\n\n", COMMAND_RUN, pid);
+
+                child_t *child = malloc(sizeof(child_t));
+                if (child == NULL) {
+                    perror("Error allocating memory");
+                    exit(EXIT_FAILURE);
+                }
+                child->pid = pid;
+                child->init_time = startTime;
+                vector_pushBack(children, child);
                 continue;
             } else {
                 
                 char seqsolver[] = "../CircuitRouter-SeqSolver/CircuitRouter-SeqSolver";
-                char *newArgs[4] = {seqsolver, args[1], client_name, NULL};
+                char *inputChannel = (from_pipe ? client_name : NULL);
+                char *newArgs[4] = {seqsolver, args[1], inputChannel, NULL};
                 execv(seqsolver, newArgs);
                 perror("Error while executing child process"); // Nao deveria chegar aqui
                 exit(EXIT_FAILURE);
@@ -192,7 +243,7 @@ int main (int argc, char** argv) {
                 close(client_pipe);
             }
             else 
-                printf("%s", unknown_message);
+                printf("%s", "Unknown command.\n");
         }
         close(adv_pipe);
     

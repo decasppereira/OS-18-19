@@ -3,15 +3,17 @@
 
 #include "lib/vector.h"
 #include <sys/types.h>
+#include "lib/timer.h"
 
 typedef struct {
     pid_t pid;
     int status;
-    double initial_time;
-    double final_time;
+    struct timeval init_time;
+    struct timeval final_time;
 } child_t;
 
 void waitForChild(vector_t *children);
 void printChildren(vector_t *children);
+child_t* searchByPid(vector_t *children, int pid);
 
 #endif /* CIRCUITROUTER_SHELL_H */
