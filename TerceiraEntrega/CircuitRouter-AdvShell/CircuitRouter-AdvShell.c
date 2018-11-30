@@ -136,8 +136,9 @@ int main (int argc, char** argv) {
 
     sprintf(adv_pipe_name, "%s.pipe", argv[0]);
     unlink(adv_pipe_name);
+
     adv_pipe = mkfifo(adv_pipe_name, 0666);
-    if(adv_pipe < 0) {
+    if(adv_pipe != 0) {
         perror("Error creating named pipe.\n");
         exit(-1);
     }
@@ -259,7 +260,11 @@ int main (int argc, char** argv) {
     for (int i = 0; i < vector_getSize(children); i++) {
         free(vector_at(children, i));
     }
-    vector_free(children);
+    
     close(adv_pipe);
+    unlink(adv_pipe_name);
+    vector_free(children);
+    free(client_name);
+    free(adv_pipe_name);
     return EXIT_SUCCESS;
 }

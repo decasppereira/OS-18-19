@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
     }
 
     client_pipe = mkfifo(client_pipe_name, 0666);
-    if(client_pipe < 0) {
+    if(client_pipe != 0) {
         perror("Error creating named pipe.\n");
         exit(-1);
     }

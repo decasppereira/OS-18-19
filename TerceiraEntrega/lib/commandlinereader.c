@@ -6,6 +6,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
 
 
 /**
@@ -73,14 +75,16 @@ int readPipeArguments(char **argVector, int vectorSize, char *buffer, int buffer
   if (argVector == NULL || buffer == NULL || vectorSize <= 0 || bufferSize <= 0)
      return 0;
 
-  if ((n=read(pipe_fds, buffer, bufferSize)) < 0) {
-    return -1;
+  bzero(buffer, bufferSize);
+  while((n=read(pipe_fds, buffer, bufferSize)) < 0){
+    if(errno == EINTR)
+      continue;
+    else{
+      perror("Error reading from pipe\n");
+      exit(-1);
+    }
   }
-  if(n==0)
-    return 0;
   
-    
-  buffer[n] = '\0';
 
   /* get the first token */
   token = strtok(buffer, s);
@@ -94,10 +98,9 @@ int readPipeArguments(char **argVector, int vectorSize, char *buffer, int buffer
     token = strtok(NULL, s);
   }
 
-
   for (i = numTokens; i<vectorSize; i++) {
     argVector[i] = NULL;
   }
-
+  
   return numTokens ; //returns the actual commands read by the pipe (not counting the client pipe's name.)
 }
