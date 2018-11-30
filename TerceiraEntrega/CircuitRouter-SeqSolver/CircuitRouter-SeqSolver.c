@@ -147,14 +147,7 @@ static void parseArgs (long argc, char* const argv[]){
     }
 
     global_inputFile = argv[optind];
-    global_clientName = argv[optind+1];
-    printf("argc: %ld, optind: %d\n", argc, optind);
-    /*if (global_clientName != NULL){
-        puts(global_clientName);
-    }
-    else
-        puts("NULL");
-    */
+    global_clientName = argv[optind+1];    
 }
 
 /* =============================================================================

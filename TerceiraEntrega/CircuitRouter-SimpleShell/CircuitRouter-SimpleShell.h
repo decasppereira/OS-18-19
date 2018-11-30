@@ -8,8 +8,6 @@
 typedef struct {
     pid_t pid;
     int status;
-    struct timeval init_time;
-    struct timeval final_time;
 } child_t;
 
 void waitForChild(vector_t *children);

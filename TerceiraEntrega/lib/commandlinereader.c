@@ -68,6 +68,7 @@ int readPipeArguments(char **argVector, int vectorSize, char *buffer, int buffer
   int n=0;
 
   char *token;
+  
 
   if (argVector == NULL || buffer == NULL || vectorSize <= 0 || bufferSize <= 0)
      return 0;
@@ -77,6 +78,7 @@ int readPipeArguments(char **argVector, int vectorSize, char *buffer, int buffer
   }
   if(n==0)
     return 0;
+  
     
   buffer[n] = '\0';
 
