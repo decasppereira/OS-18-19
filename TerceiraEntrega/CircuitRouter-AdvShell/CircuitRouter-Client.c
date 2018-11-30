@@ -10,6 +10,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 100
 #define TEMPLATE 13
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
     int client_pipe;
     char* adv_pipe_name;
     int adv_pipe;
-    int message_size, n;
+    int message_size;
 
     if (argc != 2) {
         perror("Invalid arguments\n");
@@ -50,19 +51,30 @@ int main(int argc, char** argv) {
     }
     while(1){
         if ((adv_pipe = open(adv_pipe_name, O_WRONLY)) < 0) exit (-1);
-
         /*Reads from stdin and writes in the adv pipe*/
+        
         printf("Escreva aqui: ");
         fgets(input, BUFFER_SIZE, stdin);
         sprintf(buf, "%s %s", client_pipe_name, input);
         message_size = strlen(input) + strlen(client_pipe_name) + 1;
         write(adv_pipe, buf, message_size);
+        bzero(buf, BUFFER_SIZE);
+        
         close(adv_pipe);
 
         if ((client_pipe = open(client_pipe_name, O_RDONLY)) < 0) exit (-1);
-        n = read(client_pipe, buf, BUFFER_SIZE);
-        buf[n] = '\0';
+
+        while(read(client_pipe, buf, BUFFER_SIZE) < 0){
+            if(errno == EINTR)
+                continue;
+            else{
+                perror("Error reading from pipe\n");
+                exit(-1);
+            }
+        }
+        
         puts(buf);
+        bzero(buf, BUFFER_SIZE);
         close(client_pipe);
     }
 
