@@ -1,4 +1,3 @@
-Operating Systems
-Sistemas Operativos (SO)
+## Operating Systems 2018
 
 Project of my Operating Systems course.
